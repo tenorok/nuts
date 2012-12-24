@@ -74,14 +74,33 @@ Nut.prototype = {
 
         var server = this;
 
-        process.openStdin().on('data', function(data) {
-            nut.onCommand.call(server, data);
+        process.openStdin().on('data', function(command) {
+            nut.onCommand.call(server, nut, command);
         });
     },
 
-    onCommand: function(command) {
+    onCommand: function(nut, command) {
 
-        this.write(command + '\n');
+        command = nut.parseCommand(command);
+        
+        switch(command[0]) {
+
+            case 'playid':
+                console.log(command[1]);
+                break;
+        }
+        
+        // this.write(command + '\n');
+    },
+
+    parseCommand: function(command) {
+
+        var commandName = command.toString().split(/\s/).filter(String)[0],
+            secondPart  = command.slice(commandName.length);
+
+        commandVal = secondPart.toString().replace(/^\s+|\s+$/g, '');
+
+        return [commandName, commandVal];
     }
 };
 

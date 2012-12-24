@@ -1,5 +1,3 @@
-var net = require('net');
-
 function Nut(server, port) {
 
     port = port || 6600;
@@ -26,7 +24,8 @@ Nut.prototype = {
             });
         }
 
-        var nut = Nut.prototype,
+        var net = require('net'),
+            nut = Nut.prototype,
             onConnect = function() {
                 nut.onConnect.call(this, nut);
             };
@@ -80,17 +79,13 @@ Nut.prototype = {
     },
 
     onCommand: function(nut, command) {
-
-        command = nut.parseCommand(command);
         
-        switch(command[0]) {
+        var commandInfo = nut.parseCommand(command),
+            method      = nut.commands[commandInfo[0]];
 
-            case 'playid':
-                console.log(command[1]);
-                break;
-        }
-        
-        // this.write(command + '\n');
+        return (method !== undefined) ?
+            method.call(nut, this, commandInfo[1]) :
+            false;
     },
 
     parseCommand: function(command) {
@@ -101,7 +96,14 @@ Nut.prototype = {
         commandVal = secondPart.toString().replace(/^\s+|\s+$/g, '');
 
         return [commandName, commandVal];
-    }
+    },
+
+    exec: function(command) {
+
+        this.write(command + '\n');
+    },
+
+    commands: require('./commands')
 };
 
 module.exports = Nut;

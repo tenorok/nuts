@@ -18,5 +18,10 @@ module.exports = {
 
     stop: function(server) {
         this.exec.call(server, 'stop');
+    },
+
+    listplaylists: function(server) {
+        this.exec.call(server, 'listplaylists');
+        this.setParser('listplaylists');
     }
 };

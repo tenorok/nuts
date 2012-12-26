@@ -1,10 +1,6 @@
 function Nut(server, port) {
 
-    port = port || 6600;
-
-    this.connect(server, port);
-
-    return this;
+    return this.connect(server, port || 6600);
 }
 
 Nut.prototype = {
@@ -54,6 +50,8 @@ Nut.prototype = {
     onConnect: function(nut) {
 
         this.setEncoding('utf-8');
+
+        nut.setParser('default');
         
         this.on('data', function(data) {
             nut.onData(nut, data);
@@ -79,32 +77,35 @@ Nut.prototype = {
         // Удаление перевода строки
         data = data.slice(0, -1);
 
-        if(nut.isOk(data)) {
-            
-            nut.parseResult(data);
-        } else {
-
+        if(nut.isOk(data))
+            nut.parser(data);
+        else
             return nut.message({
                 type: 'error',
                 text: data
             });
-        }
+    },
+
+    parsers: require('./parser'),
+
+    parser: function() {},
+
+    setParser: function(methodName) {
+
+        this.parser = this.parsers[methodName];
     },
 
     isOk: function(data) {
 
-        return (data.match(/^OK/)) ? true : false;
-    },
-
-    parseResult: function(data) {
-
-
+        return (data.match(/^ACK/)) ? false : true;
     },
 
     onCommand: function(nut, command) {
         
         var commandInfo = nut.parseCommand(command),
             method      = nut.commands[commandInfo[0]];
+
+        nut.setParser('default');
 
         return (method !== undefined) ?
             method.call(nut, this, commandInfo[1]) :

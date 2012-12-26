@@ -39,15 +39,15 @@ Nut.prototype = {
 
             case 'error':
                 console.error(new Error(message.text));
-                break;
+                return false;
 
             case 'warning':
-                console.warn(message.text);
-                break;
+                console.warn('[Warn:', message.text + ']');
+                return true;
 
             case 'log':
-                console.log(message.text);
-                break;
+                console.log('[Log:', message.text + ']');
+                return true;
         }
     },
 
@@ -56,11 +56,7 @@ Nut.prototype = {
         this.setEncoding('utf-8');
         
         this.on('data', function(data) {
-            
-            nut.message({
-                type: 'log',
-                text: data.toString()
-            });
+            nut.onData(nut, data);
         });
 
         this.on('error', function(error) {
@@ -78,6 +74,33 @@ Nut.prototype = {
         });
     },
 
+    onData: function(nut, data) {
+
+        // Удаление перевода строки
+        data = data.slice(0, -1);
+
+        if(nut.isOk(data)) {
+            
+            nut.parseResult(data);
+        } else {
+
+            return nut.message({
+                type: 'error',
+                text: data
+            });
+        }
+    },
+
+    isOk: function(data) {
+
+        return (data.match(/^OK/)) ? true : false;
+    },
+
+    parseResult: function(data) {
+
+
+    },
+
     onCommand: function(nut, command) {
         
         var commandInfo = nut.parseCommand(command),
@@ -85,7 +108,10 @@ Nut.prototype = {
 
         return (method !== undefined) ?
             method.call(nut, this, commandInfo[1]) :
-            false;
+            nut.message({
+                type: 'error',
+                text: 'Method not found'
+            });;
     },
 
     parseCommand: function(command) {

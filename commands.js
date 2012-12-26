@@ -20,8 +20,22 @@ module.exports = {
         this.exec.call(server, 'stop');
     },
 
+    save: function(server, name) {
+        this.exec.call(server, 'save ' + name);
+    },
+
     listplaylists: function(server) {
         this.exec.call(server, 'listplaylists');
         this.setParser('listplaylists');
+    },
+
+    playlist: function(server) {
+        this.exec.call(server, 'playlist');
+        this.setParser('playlist');
+    },
+
+    playlistinfo: function(server) {
+        this.exec.call(server, 'playlistinfo');
+        this.setParser('playlistinfo');
     }
 };

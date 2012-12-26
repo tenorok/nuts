@@ -1,3 +1,5 @@
+require('./prototype/array');
+
 function Nut(server, port) {
 
     return this.connect(server, port || 6600);
@@ -54,7 +56,8 @@ Nut.prototype = {
         nut.setParser('default');
         
         this.on('data', function(data) {
-            nut.onData(nut, data);
+            // nut.onData(nut, data);
+            console.log(nut.onData(nut, data));
         });
 
         this.on('error', function(error) {
@@ -78,7 +81,7 @@ Nut.prototype = {
         data = data.slice(0, -1);
 
         if(nut.isOk(data))
-            nut.parser(data);
+            return nut.parser(data);
         else
             return nut.message({
                 type: 'error',
@@ -130,7 +133,38 @@ Nut.prototype = {
         this.write(command + '\n');
     },
 
-    commands: require('./commands')
+    commands: require('./commands'),
+
+    str2obj: function(data, n, keys) {
+
+        var array = [];
+        
+        data.split('\n').split(n).forEach(function(el) {
+
+            array.push(toObj(el, keys || {}));
+        });
+
+        function toObj(el, keys) {
+
+            var obj = {},
+                info,
+                key;
+            
+            el.forEach(function(el) {
+
+                info = el.split(': ');
+
+                key = info[0].toLowerCase();
+                key = (keys[key] !== undefined) ? keys[key] : key;
+
+                obj[key] = info[1];
+            });
+
+            return obj;
+        }
+
+        return array;
+    }
 };
 
 module.exports = Nut;

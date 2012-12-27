@@ -75,13 +75,24 @@ Nut.prototype = {
         });
     },
 
+    data: [],
+
     onData: function(nut, data) {
 
-        // Удаление перевода строки
-        data = data.slice(0, -1);
+        // Удаление \n из конца строки, если он там есть
+        data = data.search(/\n$/) && data.slice(0, -1);
 
-        if(nut.isOk(data))
-            return nut.parser(data);
+        if(nut.isOk(data)) {
+            
+            nut.data.push(data);
+            var finalData = nut.data.join('');
+            nut.data = [];
+            return nut.parser(finalData);
+        }
+        else if(!nut.isACK(data)) {
+
+            nut.data.push(data);
+        }
         else
             return nut.message({
                 type: 'error',
@@ -100,7 +111,12 @@ Nut.prototype = {
 
     isOk: function(data) {
 
-        return (data.match(/^ACK/)) ? false : true;
+        return (data.search(/^OK|OK$/) < 0) ? false : true;
+    },
+
+    isACK: function(data) {
+
+        return (data.search(/^ACK/) < 0) ? false : true;
     },
 
     onCommand: function(nut, command) {

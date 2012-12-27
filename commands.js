@@ -37,5 +37,15 @@ module.exports = {
     playlistinfo: function(server) {
         this.exec.call(server, 'playlistinfo');
         this.setParser('playlistinfo');
+    },
+
+    listall: function(server) {
+        this.exec.call(server, 'listall');
+        this.setParser('listall');
+    },
+
+    lsinfo: function(server) {
+        this.exec.call(server, 'lsinfo');
+        this.setParser('lsinfo');
     }
 };

@@ -155,7 +155,7 @@ Nut.prototype = {
 
         var array = [];
         
-        data.split('\n').split(n).forEach(function(el) {
+        data.split('\n').split(n || 1).forEach(function(el) {
 
             array.push(toObj(el, keys || {}));
         });

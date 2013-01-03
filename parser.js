@@ -7,6 +7,11 @@ module.exports = {
             text: data
         });
     },
+
+    tojson: function(data) {
+
+        return this.str2obj(data);
+    },
     
     listplaylists: function(data) {
 

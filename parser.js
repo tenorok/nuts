@@ -12,6 +12,11 @@ module.exports = {
 
         return this.str2obj(data);
     },
+
+    tojsoninfo: function(data) {
+
+        return this.str2obj(data, 6);
+    },
     
     listplaylists: function(data) {
 

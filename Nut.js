@@ -2,14 +2,19 @@ require('./prototype/array');
 
 function Nut(server, port) {
 
-    return this.connect(server, port || 6600);
+    callback = typeof(port) === 'function' && port || callback;
+    port     = typeof(port) !== 'function' && port || 6600;
+
+    this.connect(server, port, callback);
+
+    return this;
 }
 
 Nut.prototype = {
     
     server: false,
     
-    connect: function(server, port) {
+    connect: function(server, port, callback) {
 
         if(this.server)
             return;
@@ -27,6 +32,8 @@ Nut.prototype = {
             onConnect = function() {
                 nut.onConnect.call(this, nut);
             };
+
+        nut.callback = callback;
 
         return this.server = net.connect(port, server, onConnect);
     },
@@ -56,8 +63,7 @@ Nut.prototype = {
         nut.setParser('default');
         
         this.on('data', function(data) {
-            // nut.onData(nut, data);
-            console.log(nut.onData(nut, data));
+            nut.onData(nut, data);
         });
 
         this.on('error', function(error) {
@@ -73,8 +79,14 @@ Nut.prototype = {
         process.openStdin().on('data', function(command) {
             nut.onCommand.call(server, nut, command);
         });
+
+        nut.callback.call(nut, this);
     },
 
+    eventEmitter: require('events').EventEmitter.prototype,
+
+    result: null,
+    
     data: [],
 
     onData: function(nut, data) {
@@ -82,12 +94,18 @@ Nut.prototype = {
         // Удаление \n из конца строки, если он там есть
         data = data.search(/\n$/) && data.slice(0, -1);
 
-        if(nut.isOk(data)) {
+        if(nut.isOK(data)) {
             
             nut.data.push(data);
-            var finalData = nut.data.join('');
+
+            var finalData = nut.data.join(''),
+                parser = nut.parser.shift();
+            
             nut.data = [];
-            return nut.parser(finalData);
+
+            nut.result = parser.func.call(nut, finalData)
+            
+            nut.eventEmitter.emit(parser.key);
         }
         else if(!nut.isACK(data)) {
 
@@ -102,14 +120,21 @@ Nut.prototype = {
 
     parsers: require('./parser'),
 
-    parser: function() {},
+    parser: [],
 
-    setParser: function(methodName) {
+    setParser: function(method, command) {
 
-        this.parser = this.parsers[methodName];
+        var key = (command || method) + Math.random();
+        
+        this.parser.push({
+            key: key,
+            func: this.parsers[method]
+        });
+
+        return key;
     },
 
-    isOk: function(data) {
+    isOK: function(data) {
 
         return (data.search(/^OK|OK$/) < 0) ? false : true;
     },
@@ -123,8 +148,6 @@ Nut.prototype = {
         
         var commandInfo = nut.parseCommand(command),
             method      = nut.commands[commandInfo[0]];
-
-        nut.setParser('default');
 
         return (method !== undefined) ?
             method.call(nut, this, commandInfo[1]) :
@@ -180,6 +203,24 @@ Nut.prototype = {
         }
 
         return array;
+    },
+
+    cmd: function(server, command) {
+        
+        var params   = Array.prototype.slice.call(arguments, 2, -1),
+            callback = Array.prototype.slice.call(arguments, -1)[0],
+            
+            key = this.commands[command]
+            .apply(
+                this,
+                [server].concat(params)
+            ),
+
+            that = this;
+        
+        this.eventEmitter.on(key, function() {
+            callback.call(that, that.result);
+        });
     }
 };
 

@@ -43,9 +43,9 @@
 
 `rename <old name> <new name>` ― переименовать плейлист
 
-`move <old position> <new position>` ― изменить позицию трека в плейлисте
+`move <old position> <new position>` ― изменить позицию трека в текущем плейлисте
 
-`moveid <song id> <position>` ― изменить позицию указанного трека в плейлисте
+`moveid <song id> <position>` ― изменить позицию указанного трека в текущем плейлисте
 
 `json``playlist` ― краткая информация по трекам текущего плейлиста
 

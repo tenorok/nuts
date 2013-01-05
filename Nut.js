@@ -1,6 +1,6 @@
 require('./prototype/array');
 
-function Nut(server, port) {
+function Nut(server, port, callback) {
 
     callback = typeof(port) === 'function' && port || callback;
     port     = typeof(port) !== 'function' && port || 6600;
@@ -63,6 +63,7 @@ Nut.prototype = {
         nut.setParser('default');
         
         this.on('data', function(data) {
+            // console.log(nut.onData(nut, data));
             nut.onData(nut, data);
         });
 
@@ -106,16 +107,22 @@ Nut.prototype = {
             nut.result = parser.func.call(nut, finalData)
             
             nut.eventEmitter.emit(parser.key);
+
+            return nut.result;
         }
         else if(!nut.isACK(data)) {
 
             nut.data.push(data);
         }
-        else
+        else {
+            
+            nut.parser.shift();
+
             return nut.message({
                 type: 'error',
                 text: data
             });
+        }
     },
 
     parsers: require('./parser'),
@@ -207,8 +214,10 @@ Nut.prototype = {
 
     cmd: function(server, command) {
         
-        var params   = Array.prototype.slice.call(arguments, 2, -1),
-            callback = Array.prototype.slice.call(arguments, -1)[0],
+        var isCallback = Array.prototype.slice.call(arguments, -1)[0],
+            callback = (typeof(isCallback) === 'function') ? isCallback : undefined,
+
+            params     = Array.prototype.slice.call(arguments, 2, callback ? -1 : arguments.length),
             
             key = this.commands[command]
             .apply(
@@ -219,7 +228,9 @@ Nut.prototype = {
             that = this;
         
         this.eventEmitter.on(key, function() {
-            callback.call(that, that.result);
+            
+            if(callback !== undefined)
+                callback.call(that, that.result);
         });
     }
 };

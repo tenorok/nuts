@@ -63,7 +63,7 @@ Nut.prototype = {
         nut.callback = callback;
         nut.settings = this.settings;
 
-        return this.server = net.connect(port, server, onConnect);
+        return net.connect(port, server, onConnect);
     },
 
     message: function(message) {
@@ -85,6 +85,8 @@ Nut.prototype = {
     },
 
     onConnect: function(nut) {
+
+        nut.server = this;
 
         this.setEncoding('utf-8');
 
@@ -242,12 +244,12 @@ Nut.prototype = {
 
     cmds: [],
 
-    cmd: function(server, command) {
+    cmd: function(command) {
         
         var isCallback = Array.prototype.slice.call(arguments, -1)[0],
             callback   = (typeof(isCallback) === 'function') ? isCallback : undefined,
 
-            params     = Array.prototype.slice.call(arguments, 2, callback ? -1 : arguments.length),
+            params     = Array.prototype.slice.call(arguments, 1, callback ? -1 : arguments.length),
 
             key,
             that = this;
@@ -297,7 +299,7 @@ Nut.prototype = {
 
             return that.commands[command].apply(
                 that,
-                [server].concat(params)
+                [that.server].concat(params)
             );
         }
     }

@@ -1,10 +1,37 @@
 require('./prototype/array');
 
-function Nut(server, port, callback) {
+/**
+ * Конструктор орешков
+ * @param {String}   server     Адрес сервера
+ * @param {Number}   [port]     Порт, по умолчанию 6600
+ * @param {Function} callback   Функция, которая будет выполнена после подключения
+ * @param {Object}   [settings] Настройки
+ */
+function Nut(server, port, callback, settings) {
 
-    callback = typeof(port) === 'function' && port || callback;
-    port     = typeof(port) !== 'function' && port || 6600;
+    // Установка дефолтных значений для объекта настроек
+    function setDefaultSettings(settings) {
 
+        var defaultSettings = {
+            print: false,
+            a: false,
+            b: false
+        };
+
+        if(settings === undefined)
+            return defaultSettings;
+
+        for(set in defaultSettings)
+            settings[set] = settings[set] || defaultSettings[set];
+
+        return settings;
+    }
+    
+    settings = typeof(callback) === 'object'   && callback || settings;
+    callback = typeof(port)     === 'function' && port     || callback;
+    port     = typeof(port)     === 'number'   && port     || 6600;
+
+    this.settings = setDefaultSettings(settings);
     this.connect(server, port, callback);
 
     return this;
@@ -34,6 +61,7 @@ Nut.prototype = {
             };
 
         nut.callback = callback;
+        nut.settings = this.settings;
 
         return this.server = net.connect(port, server, onConnect);
     },
@@ -47,11 +75,11 @@ Nut.prototype = {
                 return false;
 
             case 'warning':
-                console.warn('[Warn:', message.text + ']');
+                console.warn('[ Warn:', message.text, ']');
                 return true;
 
             case 'log':
-                console.log('[Log:', message.text + ']');
+                console.log('[ Log:', message.text, ']');
                 return true;
         }
     },
@@ -63,7 +91,7 @@ Nut.prototype = {
         nut.setParser('default');
         
         this.on('data', function(data) {
-            // console.log(nut.onData(nut, data));
+            
             nut.onData(nut, data);
         });
 
@@ -220,15 +248,21 @@ Nut.prototype = {
             params     = Array.prototype.slice.call(arguments, 2, callback ? -1 : arguments.length),
             
             key = this.commands[command]
-            .apply(
-                this,
-                [server].concat(params)
-            ),
+                .apply(
+                    this,
+                    [server].concat(params)
+                ),
 
             that = this;
         
         this.eventEmitter.on(key, function() {
             
+            if(that.settings.print)
+                that.message({
+                    type: 'log',
+                    text: that.result
+                });
+
             if(callback !== undefined)
                 callback.call(that, that.result);
         });

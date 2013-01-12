@@ -66,6 +66,16 @@ Nut.prototype = {
         return net.connect(port, server, onConnect);
     },
 
+    close: function() {
+        
+        this.server.destroy();
+
+        this.message({
+            type: 'log',
+            text: 'Connection closed'
+        });
+    },
+
     message: function(message) {
         
         switch(message.type) {
@@ -302,6 +312,8 @@ Nut.prototype = {
                 [that.server].concat(params)
             );
         }
+
+        return this;
     }
 };
 

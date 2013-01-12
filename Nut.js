@@ -240,32 +240,66 @@ Nut.prototype = {
         return array;
     },
 
+    cmds: [],
+
     cmd: function(server, command) {
         
         var isCallback = Array.prototype.slice.call(arguments, -1)[0],
-            callback = (typeof(isCallback) === 'function') ? isCallback : undefined,
+            callback   = (typeof(isCallback) === 'function') ? isCallback : undefined,
 
             params     = Array.prototype.slice.call(arguments, 2, callback ? -1 : arguments.length),
-            
-            key = this.commands[command]
-                .apply(
-                    this,
-                    [server].concat(params)
-                ),
 
+            key,
             that = this;
-        
-        this.eventEmitter.on(key, function() {
-            
-            if(that.settings.print)
-                that.message({
-                    type: 'log',
-                    text: that.result
-                });
 
-            if(callback !== undefined)
-                callback.call(that, that.result);
+        this.cmds.push({
+            command: command,
+            params: params,
+            callback: callback
         });
+
+        if(this.cmds.length == 1) {
+            
+            key = call(command, params);
+            bind(key, callback);
+        }
+        
+        function bind(key, callback) {
+
+            that.eventEmitter.on(key, function() {
+
+                if(that.settings.print)
+                    that.message({
+                        type: 'log',
+                        text: that.result
+                    });
+
+                if(callback !== undefined)
+                    callback.call(that, that.result);
+
+                that.cmds.shift();
+
+                var nextCmd = that.cmds[0];
+
+                if(nextCmd !== undefined) {
+
+                    key = call(
+                        nextCmd.command,
+                        nextCmd.params
+                    );
+
+                    bind(key, nextCmd.callback);
+                }
+            });
+        }
+
+        function call(command, params) {
+
+            return that.commands[command].apply(
+                that,
+                [server].concat(params)
+            );
+        }
     }
 };
 
